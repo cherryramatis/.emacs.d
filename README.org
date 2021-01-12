@@ -592,10 +592,15 @@ Dwm like splits whithin emacs
     (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
     (setq org-capture-templates
-          '(("t" "Todo" entry (file+olp "~/Dropbox/org/todo.org" "Tasks")
-             "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 1)
+          '(
+            ("t" "Today" entry (file+headline "~/Dropbox/org/todo.org" "Today")
+             "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
+            ("T" "Tomorrow" entry (file+headline "~/Dropbox/org/todo.org" "Tomorrow")
+             "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
+                    ("d" "No date" entry (file+headline "~/Dropbox/org/todo.org" "No Date")
+             "* TODO %?\n" :empty-lines 0)
             ("n" "Note" entry (file+olp "~/Dropbox/org/notes.org" "Inbox")
-             "* %?" :empty-lines 1)))
+             "* %?" :empty-lines 0)))
 
     (define-key global-map (kbd "C-c oc") (lambda () (interactive) (org-capture)))
     (define-key global-map (kbd "C-c oa") (lambda () (interactive) (org-agenda-list)))
