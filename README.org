@@ -92,6 +92,11 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
 #+BEGIN_SRC emacs-lisp
 (define-key global-map (kbd "C-x k") 'kill-current-buffer)
 #+END_SRC
+** Next/Previous heading
+#+begin_src emacs-lisp
+  (define-key org-mode-map (kbd "M-p") #'outline-previous-visible-heading)
+  (define-key org-mode-map (kbd "M-n") #'outline-next-visible-heading)
+#+end_src
 * Third party packages
 ** Which key
 which-key is a minor mode for Emacs that displays the key bindings
