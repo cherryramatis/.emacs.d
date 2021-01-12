@@ -564,6 +564,12 @@ Dwm like splits whithin emacs
     (setq display-buffer-base-action '(display-buffer-below-selected))
     (edwina-mode 1))
 #+end_src
+** Eshell suggestions
+Fish shell like autocomplete in eshell
+#+begin_src emacs-lisp
+  (use-package esh-autosuggest
+    :hook (eshell-mode . esh-autosuggest-mode))
+#+end_src
 * Mode configuration
 ** Org mode
 *** Text wrap on 80 characters
