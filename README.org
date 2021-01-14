@@ -97,6 +97,37 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
   (define-key org-mode-map (kbd "M-p") #'outline-previous-visible-heading)
   (define-key org-mode-map (kbd "M-n") #'outline-next-visible-heading)
 #+end_src
+** Open org agenda
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-c a") #'org-agenda-list)
+#+end_src
+** Manipulate buffers/window
+#+begin_src emacs-lisp
+  (defun kill-and-close ()
+    "Kill buffer and close window"
+    (interactive)
+    (kill-current-buffer)
+    (delete-window)
+    )
+
+  (global-set-key (kbd "s-k") #'kill-and-close)
+  (global-set-key (kbd "s-o") #'other-window)
+  (global-set-key (kbd "s-b") #'switch-to-buffer-other-window)
+#+end_src
+** File fuzzy finding
+#+begin_src emacs-lisp
+  (defun cherry/find-files ()
+    "Use either find-file or projectile-find-file depending if is on a project"
+    (interactive)
+    (if (projectile-project-p)
+        (projectile-find-file-other-window)
+      (progn
+        (split-window-right)
+                      (counsel-find-file)
+                      )))
+
+  (global-set-key (kbd "s-f") #'cherry/find-files)
+#+end_src
 * Third party packages
 ** Which key
 which-key is a minor mode for Emacs that displays the key bindings
@@ -175,27 +206,21 @@ that only see the buffers I care about in that EXWM workspace.
 	    ;; Group remaining buffers by major mode.
 	    (auto-mode))))
 #+END_SRC
-** Diminish
-When we diminish a mode, we are saying we want it to continue doing its work for us, but we no longer want to be reminded of it. It becomes a night worker, like a janitor; it becomes an invisible man; it remains a component, perhaps an important one, sometimes an indispensable one, of the mechanism that maintains the day-people’s world, but its place in their thoughts is diminished, usually to nothing. As we grow old we diminish more and more such thoughts, such people, usually to nothing. – Will Mengarini
+** Dired
 #+begin_src emacs-lisp
-  (use-package diminish)
-  (require 'diminish)
-  (diminish 'org-roam-mode)
-  (diminish 'org-indent-mode)
-  (diminish 'company-box-mode)
-  (diminish 'buffer-face-mode)
-  (diminish 'guru-mode)
-  (diminish 'auto-revert-mode)
-  (diminish 'flycheck-mode)
-  (diminish 'company-mode)
-  (diminish 'which-key-mode)
-  (diminish 'ivy-mode)
-  (diminish 'projectile-mode)
-  (diminish 'visual-line-mode)
-  (diminish 'undo-tree-mode)
-  (diminish 'eldoc-mode)
-  (diminish 'yas-minor-mode)
-  (diminish 'auto-revert-mode)
+  (use-package dired
+    :ensure nil
+    :commands (dired dired-jump)
+    :config
+    (global-set-key (kbd "C-c d") 'dired-jump)
+    )
+
+  (use-package dired-single)
+  (use-package all-the-icons-dired
+    :after (all-the-icons dired)
+    :config
+    (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+    )
 #+end_src
 ** Ivy
 I currently use Ivy, Counsel, and Swiper to navigate around files, buffers, and projects super quickly. Here are some workflow notes on how to best use Ivy:
@@ -556,14 +581,6 @@ easy way to manipulate lisp
     (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
     (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode))
 #+end_src
-** Edwina
-Dwm like splits whithin emacs
-#+begin_src emacs-lisp
-  (use-package edwina
-    :config
-    (setq display-buffer-base-action '(display-buffer-below-selected))
-    (edwina-mode 1))
-#+end_src
 ** Eshell suggestions
 Fish shell like autocomplete in eshell
 #+begin_src emacs-lisp
@@ -615,7 +632,7 @@ Fish shell like autocomplete in eshell
 
     (define-key global-map (kbd "C-c oc") (lambda () (interactive) (org-capture)))
     (define-key global-map (kbd "C-c oa") (lambda () (interactive) (org-agenda-list)))
-    (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file "~/Dropbox/org/todo.org")))
+    (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file-other-window "~/Dropbox/org/todo.org")))
     )
 #+END_SRC
 *** UI changes
@@ -634,83 +651,23 @@ Fish shell like autocomplete in eshell
       (use-package visual-fill-column
 	:hook (org-mode . cherry/org-mode-visual-fill))
     #+END_SRC
-*** Org kanban view
+*** Archive all DONE tasks
 #+begin_src emacs-lisp
-  (setq org-agenda-custom-commands
-        '(				; start list
-          (" " "Agenda" ((agenda "" ((org-agenda-overriding-header "Today's Schedule:")
-                                     (org-agenda-span 'day)
-                                     (org-agenda-ndays 1)
-                                     (org-agenda-start-on-weekday nil)
-                                     (org-agenda-start-day "+0d")
-                                     ;; Remove refiling tasks (https://www.reddit.com/r/orgmode/comments/69acg5/orgagendaskipentryif_but_for_categories/)
-                                     (org-agenda-skip-function '(cond ((equal (file-name-nondirectory (buffer-file-name)) "refile.org")
-                                                                       (outline-next-heading) (1- (point)))
-                                                                      (t (org-agenda-skip-entry-if 'todo 'done))
-                                                                      ))
-                                     ;; (org-agenda-skip-entry-if 'todo 'done)
-                                     (org-agenda-todo-ignore-deadlines nil)))
-                         ;; Project tickle list.
-                         (todo "PROJECT" ((org-agenda-overriding-header "Project list:")
-                                          (org-tags-match-list-sublevels nil)))
-                         ;; Refiling category set file wide in file.
-                         (tags "REFILING" ((org-agenda-overriding-header "Tasks to Refile:")
-                                           (org-tags-match-list-sublevels nil)))
-                         ;; Tasks upcoming (should be similar to above?)
-                         (agenda "" ((org-agenda-overriding-header "Upcoming:")
-                                     (org-agenda-span 7)
-                                     (org-agenda-start-day "+1d")
-                                     (org-agenda-start-on-weekday nil)
-                                     (org-agenda-skip-function '(cond ((equal (file-name-nondirectory (buffer-file-name)) "refile.org")
-                                                                       (outline-next-heading) (1- (point)))
-                                                                      (t (org-agenda-skip-entry-if 'todo 'done))
-                                                                      ))
-                                     ;; I should set this next one to true, so that deadlines are ignored...?
-                                     (org-agenda-todo-ignore-deadlines nil)))
-                         ;; Tasks that are unscheduled
-                         (todo "TODO" ((org-agenda-overriding-header "Unscheduled Tasks:")
-                                       (org-tags-match-list-sublevels nil)
-                                       ;; (org-agenda-skip-entry-if 'scheduled 'deadline)
-                                       (org-agenda-todo-ignore-scheduled 'all)
-                                       ))
-                         ;; Tasks that are waiting or someday
-                         (todo "WAITING|SOMEDAY" ((org-agenda-overriding-header "Waiting/Someday Tasks:")
-                                                  (org-tags-match-list-sublevels nil)))
-                         )
-           )
-          )
+  ;; TODO: Define a binding for this if needed
 
-        ;; If an item has a (near) deadline, and is scheduled, only show the deadline.
-        org-agenda-skip-scheduled-if-deadline-is-shown t
-        )
-
-  (defun org-agenda-show-kanban (&optional arg)
-    (interactive "P")
-    (org-agenda arg " "))
-
-  (global-set-key (kbd "C-c a") #'org-agenda-show-kanban)
-#+end_src
-** Dired
-Dired makes an Emacs buffer containing a listing of a directory, and optionally some of its subdirectories as well. You can use the normal Emacs commands to move around in this buffer, and special Dired commands to operate on the listed files. Dired works with both local and remote directories.
-#+begin_src emacs-lisp
-  (use-package dired
-    :ensure nil
-    :commands (dired dired-jump)
-    )
-
-  (use-package dired-single)
-  (use-package all-the-icons-dired
-    :after (all-the-icons dired)
-    :config
-    (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
-    )
-
-  (global-set-key (kbd "C-c d") 'dired-jump)
+  (defun cherry/org-archive-done-tasks ()
+    "Archive all DONE subheadings"
+    (interactive)
+    (org-map-entries
+     (lambda ()
+       (org-archive-subtree)
+       (setq org-map-continue-from (org-element-property :begin (org-element-at-point))))
+     "/DONE" 'file))
 #+end_src
 * Custom functions
 ** Open eshell on other buffer
 #+begin_src emacs-lisp
-  (defun open-eshell ()
+  (defun cherry/open-eshell ()
     "Open eshell"
     (interactive)
     (if (projectile-project-p)
@@ -720,7 +677,7 @@ Dired makes an Emacs buffer containing a listing of a directory, and optionally 
   (defun shell-other-window (buffer-name)
     "Open a `shell' in a new window."
     (interactive)
-    (let ((buf (open-eshell)))
+    (let ((buf (cherry/open-eshell)))
       (switch-to-buffer (other-buffer buf))
       (switch-to-buffer-other-window buf)
       (rename-buffer buffer-name)

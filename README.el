@@ -66,6 +66,22 @@
 
 (define-key global-map (kbd "C-x k") 'kill-current-buffer)
 
+(define-key org-mode-map (kbd "M-p") #'outline-previous-visible-heading)
+(define-key org-mode-map (kbd "M-n") #'outline-next-visible-heading)
+
+(global-set-key (kbd "C-c a") #'org-agenda-list)
+
+(defun kill-and-close ()
+  "Kill buffer and close window"
+  (interactive)
+  (kill-current-buffer)
+  (delete-window)
+  )
+
+(global-set-key (kbd "s-k") #'kill-and-close)
+(global-set-key (kbd "s-o") #'other-window)
+(global-set-key (kbd "s-b") #'switch-to-buffer-other-window)
+
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
@@ -134,6 +150,20 @@
 (diminish 'eldoc-mode)
 (diminish 'yas-minor-mode)
 (diminish 'auto-revert-mode)
+
+(use-package dired
+  :ensure nil
+  :commands (dired dired-jump)
+  :config
+  (global-set-key (kbd "C-c d") 'dired-jump)
+  )
+
+(use-package dired-single)
+(use-package all-the-icons-dired
+  :after (all-the-icons dired)
+  :config
+  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+  )
 
 (use-package ivy
   :init (ivy-mode 1)
@@ -318,10 +348,8 @@
   (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
   (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode))
 
-(use-package edwina
-  :config
-  (setq display-buffer-base-action '(display-buffer-below-selected))
-  (edwina-mode 1))
+(use-package esh-autosuggest
+  :hook (eshell-mode . esh-autosuggest-mode))
 
 (auto-fill-mode)
 (setq-default fill-column 80)
@@ -350,14 +378,19 @@
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
   (setq org-capture-templates
-        '(("t" "Todo" entry (file+olp "~/Dropbox/org/todo.org" "Tasks")
-           "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 1)
+        '(
+          ("t" "Today" entry (file+headline "~/Dropbox/org/todo.org" "Today")
+           "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
+          ("T" "Tomorrow" entry (file+headline "~/Dropbox/org/todo.org" "Tomorrow")
+           "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
+                  ("d" "No date" entry (file+headline "~/Dropbox/org/todo.org" "No Date")
+           "* TODO %?\n" :empty-lines 0)
           ("n" "Note" entry (file+olp "~/Dropbox/org/notes.org" "Inbox")
-           "* %?" :empty-lines 1)))
+           "* %?" :empty-lines 0)))
 
   (define-key global-map (kbd "C-c oc") (lambda () (interactive) (org-capture)))
   (define-key global-map (kbd "C-c oa") (lambda () (interactive) (org-agenda-list)))
-  (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file "~/Dropbox/org/todo.org")))
+  (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file-other-window "~/Dropbox/org/todo.org")))
   )
 
 (use-package org-bullets
@@ -371,75 +404,18 @@
 (use-package visual-fill-column
   :hook (org-mode . cherry/org-mode-visual-fill))
 
-(setq org-agenda-custom-commands
-      '(				; start list
-        (" " "Agenda" ((agenda "" ((org-agenda-overriding-header "Today's Schedule:")
-                                   (org-agenda-span 'day)
-                                   (org-agenda-ndays 1)
-                                   (org-agenda-start-on-weekday nil)
-                                   (org-agenda-start-day "+0d")
-                                   ;; Remove refiling tasks (https://www.reddit.com/r/orgmode/comments/69acg5/orgagendaskipentryif_but_for_categories/)
-                                   (org-agenda-skip-function '(cond ((equal (file-name-nondirectory (buffer-file-name)) "refile.org")
-                                                                     (outline-next-heading) (1- (point)))
-                                                                    (t (org-agenda-skip-entry-if 'todo 'done))
-                                                                    ))
-                                   ;; (org-agenda-skip-entry-if 'todo 'done)
-                                   (org-agenda-todo-ignore-deadlines nil)))
-                       ;; Project tickle list.
-                       (todo "PROJECT" ((org-agenda-overriding-header "Project list:")
-                                        (org-tags-match-list-sublevels nil)))
-                       ;; Refiling category set file wide in file.
-                       (tags "REFILING" ((org-agenda-overriding-header "Tasks to Refile:")
-                                         (org-tags-match-list-sublevels nil)))
-                       ;; Tasks upcoming (should be similar to above?)
-                       (agenda "" ((org-agenda-overriding-header "Upcoming:")
-                                   (org-agenda-span 7)
-                                   (org-agenda-start-day "+1d")
-                                   (org-agenda-start-on-weekday nil)
-                                   (org-agenda-skip-function '(cond ((equal (file-name-nondirectory (buffer-file-name)) "refile.org")
-                                                                     (outline-next-heading) (1- (point)))
-                                                                    (t (org-agenda-skip-entry-if 'todo 'done))
-                                                                    ))
-                                   ;; I should set this next one to true, so that deadlines are ignored...?
-                                   (org-agenda-todo-ignore-deadlines nil)))
-                       ;; Tasks that are unscheduled
-                       (todo "TODO" ((org-agenda-overriding-header "Unscheduled Tasks:")
-                                     (org-tags-match-list-sublevels nil)
-                                     ;; (org-agenda-skip-entry-if 'scheduled 'deadline)
-                                     (org-agenda-todo-ignore-scheduled 'all)
-                                     ))
-                       ;; Tasks that are waiting or someday
-                       (todo "WAITING|SOMEDAY" ((org-agenda-overriding-header "Waiting/Someday Tasks:")
-                                                (org-tags-match-list-sublevels nil)))
-                       )
-         )
-        )
+;; TODO: Define a binding for this if needed
 
-      ;; If an item has a (near) deadline, and is scheduled, only show the deadline.
-      org-agenda-skip-scheduled-if-deadline-is-shown t
-      )
+(defun cherry/org-archive-done-tasks ()
+  "Archive all DONE subheadings"
+  (interactive)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (org-element-property :begin (org-element-at-point))))
+   "/DONE" 'file))
 
-(defun org-agenda-show-kanban (&optional arg)
-  (interactive "P")
-  (org-agenda arg " "))
-
-(global-set-key (kbd "C-c a") #'org-agenda-show-kanban)
-
-(use-package dired
-  :ensure nil
-  :commands (dired dired-jump)
-  )
-
-(use-package dired-single)
-(use-package all-the-icons-dired
-  :after (all-the-icons dired)
-  :config
-  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
-  )
-
-(global-set-key (kbd "C-c d") 'dired-jump)
-
-(defun open-eshell ()
+(defun cherry/open-eshell ()
   "Open eshell"
   (interactive)
   (if (projectile-project-p)
@@ -449,7 +425,7 @@
 (defun shell-other-window (buffer-name)
   "Open a `shell' in a new window."
   (interactive)
-  (let ((buf (open-eshell)))
+  (let ((buf (cherry/open-eshell)))
     (switch-to-buffer (other-buffer buf))
     (switch-to-buffer-other-window buf)
     (rename-buffer buffer-name)
