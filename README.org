@@ -113,6 +113,10 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
   (global-set-key (kbd "s-k") #'kill-and-close)
   (global-set-key (kbd "s-o") #'other-window)
   (global-set-key (kbd "s-b") #'switch-to-buffer-other-window)
+  (global-set-key (kbd "s-1") #'delete-other-windows)
+  (global-set-key (kbd "s-2") #'split-window-below)
+  (global-set-key (kbd "s-3") #'split-window-right)
+  (global-set-key (kbd "s-0") #'delete-window)
 #+end_src
 ** File fuzzy finding
 #+begin_src emacs-lisp
@@ -121,12 +125,15 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
     (interactive)
     (if (projectile-project-p)
         (projectile-find-file-other-window)
-      (progn
-        (split-window-right)
-                      (counsel-find-file)
-                      )))
+      (find-file-other-window (read-file-name "File: "))))
+
 
   (global-set-key (kbd "s-f") #'cherry/find-files)
+#+end_src
+** Undo/Redo
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-/") #'undo)
+  (global-set-key (kbd "C-_") #'redo)
 #+end_src
 * Third party packages
 ** Which key
@@ -527,15 +534,15 @@ You know how many windows managers have workspaces you can switch between? These
   (use-package eyebrowse
     :diminish eyebrowse-mode
     :config (progn
-                          (define-key eyebrowse-mode-map (kbd "s-1") 'eyebrowse-switch-to-window-config-1)
-              (define-key eyebrowse-mode-map (kbd "s-2") 'eyebrowse-switch-to-window-config-2)
-              (define-key eyebrowse-mode-map (kbd "s-3") 'eyebrowse-switch-to-window-config-3)
-              (define-key eyebrowse-mode-map (kbd "s-4") 'eyebrowse-switch-to-window-config-4)
-              (define-key eyebrowse-mode-map (kbd "s-5") 'eyebrowse-switch-to-window-config-5)
-              (define-key eyebrowse-mode-map (kbd "s-6") 'eyebrowse-switch-to-window-config-6)
-              (define-key eyebrowse-mode-map (kbd "s-7") 'eyebrowse-switch-to-window-config-7)
-              (define-key eyebrowse-mode-map (kbd "s-8") 'eyebrowse-switch-to-window-config-8)
-              (define-key eyebrowse-mode-map (kbd "s-9") 'eyebrowse-switch-to-window-config-9)
+                          (define-key eyebrowse-mode-map (kbd "C-c 1") 'eyebrowse-switch-to-window-config-1)
+              (define-key eyebrowse-mode-map (kbd "C-c 2") 'eyebrowse-switch-to-window-config-2)
+              (define-key eyebrowse-mode-map (kbd "C-c 3") 'eyebrowse-switch-to-window-config-3)
+              (define-key eyebrowse-mode-map (kbd "C-c 4") 'eyebrowse-switch-to-window-config-4)
+              (define-key eyebrowse-mode-map (kbd "C-c 5") 'eyebrowse-switch-to-window-config-5)
+              (define-key eyebrowse-mode-map (kbd "C-c 6") 'eyebrowse-switch-to-window-config-6)
+              (define-key eyebrowse-mode-map (kbd "C-c 7") 'eyebrowse-switch-to-window-config-7)
+              (define-key eyebrowse-mode-map (kbd "C-c 8") 'eyebrowse-switch-to-window-config-8)
+              (define-key eyebrowse-mode-map (kbd "C-c 9") 'eyebrowse-switch-to-window-config-9)
               (eyebrowse-mode t)
               (setq eyebrowse-new-workspace t)))
 #+end_src
@@ -586,6 +593,21 @@ Fish shell like autocomplete in eshell
 #+begin_src emacs-lisp
   (use-package esh-autosuggest
     :hook (eshell-mode . esh-autosuggest-mode))
+#+end_src
+** IRC client
+Circe is a Client for IRC in Emacs. It tries to have sane defaults, and integrates well with the rest of the editor, using standard Emacs key bindings and indicating activity in channels in the status bar so it stays out of your way unless you want to use it.
+Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very complex).
+#+begin_src emacs-lisp
+  (use-package circe
+    :config
+    (setq circe-network-options
+        '(("Freenode"
+           :tls t
+           :nick "cherryramatis"
+           :sasl-username "cherryramatis"
+           :sasl-password (lambda (x) (read-passwd "SASL password: "))
+           :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
+           ))))
 #+end_src
 * Mode configuration
 ** Org mode

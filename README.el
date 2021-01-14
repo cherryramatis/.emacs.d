@@ -81,6 +81,23 @@
 (global-set-key (kbd "s-k") #'kill-and-close)
 (global-set-key (kbd "s-o") #'other-window)
 (global-set-key (kbd "s-b") #'switch-to-buffer-other-window)
+(global-set-key (kbd "s-1") #'delete-other-windows)
+(global-set-key (kbd "s-2") #'split-window-below)
+(global-set-key (kbd "s-3") #'split-window-right)
+(global-set-key (kbd "s-0") #'delete-window)
+
+(defun cherry/find-files ()
+  "Use either find-file or projectile-find-file depending if is on a project"
+  (interactive)
+  (if (projectile-project-p)
+      (projectile-find-file-other-window)
+    (find-file-other-window (read-file-name "File: "))))
+
+
+(global-set-key (kbd "s-f") #'cherry/find-files)
+
+(global-set-key (kbd "C-/") #'undo)
+(global-set-key (kbd "C-_") #'redo)
 
 (use-package which-key
   :init (which-key-mode)
@@ -131,25 +148,6 @@
 			  "*Special*"))))
 	  ;; Group remaining buffers by major mode.
 	  (auto-mode))))
-
-(use-package diminish)
-(require 'diminish)
-(diminish 'org-roam-mode)
-(diminish 'org-indent-mode)
-(diminish 'company-box-mode)
-(diminish 'buffer-face-mode)
-(diminish 'guru-mode)
-(diminish 'auto-revert-mode)
-(diminish 'flycheck-mode)
-(diminish 'company-mode)
-(diminish 'which-key-mode)
-(diminish 'ivy-mode)
-(diminish 'projectile-mode)
-(diminish 'visual-line-mode)
-(diminish 'undo-tree-mode)
-(diminish 'eldoc-mode)
-(diminish 'yas-minor-mode)
-(diminish 'auto-revert-mode)
 
 (use-package dired
   :ensure nil
@@ -322,15 +320,15 @@
 (use-package eyebrowse
   :diminish eyebrowse-mode
   :config (progn
-                        (define-key eyebrowse-mode-map (kbd "s-1") 'eyebrowse-switch-to-window-config-1)
-            (define-key eyebrowse-mode-map (kbd "s-2") 'eyebrowse-switch-to-window-config-2)
-            (define-key eyebrowse-mode-map (kbd "s-3") 'eyebrowse-switch-to-window-config-3)
-            (define-key eyebrowse-mode-map (kbd "s-4") 'eyebrowse-switch-to-window-config-4)
-            (define-key eyebrowse-mode-map (kbd "s-5") 'eyebrowse-switch-to-window-config-5)
-            (define-key eyebrowse-mode-map (kbd "s-6") 'eyebrowse-switch-to-window-config-6)
-            (define-key eyebrowse-mode-map (kbd "s-7") 'eyebrowse-switch-to-window-config-7)
-            (define-key eyebrowse-mode-map (kbd "s-8") 'eyebrowse-switch-to-window-config-8)
-            (define-key eyebrowse-mode-map (kbd "s-9") 'eyebrowse-switch-to-window-config-9)
+                        (define-key eyebrowse-mode-map (kbd "C-c 1") 'eyebrowse-switch-to-window-config-1)
+            (define-key eyebrowse-mode-map (kbd "C-c 2") 'eyebrowse-switch-to-window-config-2)
+            (define-key eyebrowse-mode-map (kbd "C-c 3") 'eyebrowse-switch-to-window-config-3)
+            (define-key eyebrowse-mode-map (kbd "C-c 4") 'eyebrowse-switch-to-window-config-4)
+            (define-key eyebrowse-mode-map (kbd "C-c 5") 'eyebrowse-switch-to-window-config-5)
+            (define-key eyebrowse-mode-map (kbd "C-c 6") 'eyebrowse-switch-to-window-config-6)
+            (define-key eyebrowse-mode-map (kbd "C-c 7") 'eyebrowse-switch-to-window-config-7)
+            (define-key eyebrowse-mode-map (kbd "C-c 8") 'eyebrowse-switch-to-window-config-8)
+            (define-key eyebrowse-mode-map (kbd "C-c 9") 'eyebrowse-switch-to-window-config-9)
             (eyebrowse-mode t)
             (setq eyebrowse-new-workspace t)))
 
@@ -350,6 +348,17 @@
 
 (use-package esh-autosuggest
   :hook (eshell-mode . esh-autosuggest-mode))
+
+(use-package circe
+  :config
+  (setq circe-network-options
+      '(("Freenode"
+         :tls t
+         :nick (getenv "IRC_NICK")
+         :sasl-username (getenv "IRC_NICK")
+         :sasl-password (getenv "IRC_PASSWORD")
+         :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
+         ))))
 
 (auto-fill-mode)
 (setq-default fill-column 80)
