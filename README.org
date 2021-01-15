@@ -113,9 +113,11 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
   (defun kill-and-close ()
     "Kill buffer and close window"
     (interactive)
-    (kill-current-buffer)
-    (delete-window)
-    )
+    (if (one-window-p)
+        (kill-current-buffer)
+      (progn
+        (kill-current-buffer)
+        (delete-window))))
 
   (global-set-key (kbd "s-k") #'kill-and-close)
   (global-set-key (kbd "s-o") #'other-window)
@@ -336,6 +338,7 @@ Client for Language Server Protocol (v3.14). lsp-mode aims to provide IDE-like e
     :commands (lsp lsp-deferred)
     :hook ((lsp-mode . cherry/lsp-mode-setup)
            (web-mode . lsp-mode)
+           (python-mode . lsp-mode)
            (typescript-mode . lsp-mode))
     :init
     (setq lsp-keymap-prefix "C-c l")
@@ -417,10 +420,10 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 ** Add node module path
 This file provides add-node-modules-path, which searches the current files parent directories for the node_modules/.bin/ directory and adds it to the buffer local exec-path. This allows Emacs to find project based installs of e.g. eslint.
 #+begin_src emacs-lisp
-  (setq exec-path (append exec-path '("/usr/local/bin")))
+  (setq exec-path (append exec-path '("/usr/local/bin" "/Library/Python/3.9/lib/python/site-packages/")))
   (cond ((eq system-type 'darwin)
-     (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-     (setq exec-path (append exec-path '("/usr/local/bin")))))
+     (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin" ":/Library/Python/3.9/lib/python/site-packages/"))
+     (setq exec-path (append exec-path '("/usr/local/bin" "/Library/Python/3.9/lib/python/site-packages/")))))
   (use-package add-node-modules-path
     :init (add-node-modules-path))
 #+end_src
@@ -473,8 +476,9 @@ Projectile has native support for using ivy as its completion system. Counsel-pr
 ** Magit
 Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain. While we cannot (yet) claim that Magit wraps and improves upon each and every Git command, it is complete enough to allow even experienced Git users to perform almost all of their daily version control tasks directly from within Emacs. While many fine Git clients exist, only Magit and Git itself deserve to be called porcelains.
 #+begin_src emacs-lisp
-(use-package magit
-  :bind ("C-x g" . magit))
+  (use-package magit
+    :bind (("C-x g" . magit)
+           ("s-g" . magit)))
 #+end_src
 ** Treesitter
 Better syntax highlighting with parseal building. This is an Emacs Lisp binding for tree-sitter, an incremental parsing library. It requires Emacs 25.1 or above, built with dynamic module support.
@@ -619,6 +623,78 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
            :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
            ))))
 #+end_src
+** Telegram Client
+#+begin_src emacs-lisp
+  (use-package telega
+    :bind (("s-t" . telega))
+    :commands (telega)
+    :defer t)
+#+end_src
+** SLIME
+#+begin_src emacs-lisp
+  (use-package slime-company
+    :defer t)
+
+  (use-package slime
+    :bind (("M-TAB" . company-complete)
+           ("C-c C-d C-s" . slime-describe-symbol)
+           ("C-c C-d C-f" . slime-describe-function))
+    :init
+    (setq slime-lisp-implementations '((sbcl ("sbcl")))
+          slime-default-lisp 'sbcl)
+    (setq common-lisp-hyperspec-root
+          "/usr/local/share/doc/hyperspec/HyperSpec/")
+    (setq common-lisp-hyperspec-symbol-table
+          (concat common-lisp-hyperspec-root "Data/Map_Sym.txt"))
+    (setq common-lisp-hyperspec-issuex-table
+          (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+    (slime-setup '(slime-fancy slime-company slime-cl-indent)))
+
+  (defun slime-description-fontify ()
+    (with-current-buffer "*slime-description*"
+      (slime-company-doc-mode)))
+
+  (defadvice slime-show-description (after slime-description-fontify activate)
+    "Fontify sections of SLIME Description."
+    (slime-description-fontify))
+#+end_src
+** Clojure config
+*** Clojure mode
+#+begin_src emacs-lisp
+  (use-package clojure-mode
+    :ensure t
+    :mode (("\\.clj\\'" . clojure-mode)
+           ("\\.edn\\'" . clojure-mode))
+    :config
+    (add-hook 'clojure-mode-map 'paredit-mode)
+    )
+#+end_src
+*** Cider
+#+begin_src emacs-lisp
+  (use-package cider
+    :mode (("\\.clj\\'" . cider-mode)
+           ("\\.edn\\'" . cider-mode)))
+#+end_src
+** Python config
+*** Pipenv
+#+begin_src emacs-lisp
+  (use-package pipenv
+    :hook (python-mode . pipenv-mode)
+    :init
+    (setq
+     pipenv-projectile-after-switch-function
+     #'pipenv-projectile-after-switch-extended))
+#+end_s
+*** Lsp Python
+#+begin_src emacs-lisp
+  (use-package lsp-jedi
+    :after lsp-mode 
+    :config
+    (with-eval-after-load "lsp-mode"
+      (add-to-list 'lsp-disabled-clients 'pyls)
+      (add-to-list 'lsp-enabled-clients 'jedi)))
+#+end_src
+
 * Mode configuration
 ** Org mode
 *** Text wrap on 80 characters

@@ -36,7 +36,12 @@
 (electric-pair-mode 1)
 (add-hook 'org-mode-hook (lambda () (electric-pair-mode -1)))
 
-(linum-mode 1)
+(setq column-numbers-mode t)
+(global-display-line-numbers-mode)
+(add-hook 'org-mode-hook (global-display-line-numbers-mode -1))
+
+(global-hl-line-mode 1)
+(add-hook 'org-mode-hook (global-hl-line-mode -1))
 
 ;; The default is 800 kilobytes.  Measured in bytes.
 (setq gc-cons-threshold (* 50 1000 1000))
@@ -214,6 +219,7 @@
   :commands (lsp lsp-deferred)
   :hook ((lsp-mode . cherry/lsp-mode-setup)
          (web-mode . lsp-mode)
+         (python-mode . lsp-mode)
          (typescript-mode . lsp-mode))
   :init
   (setq lsp-keymap-prefix "C-c l")
@@ -231,6 +237,9 @@
 (use-package company
   :config
   (add-hook 'after-init-hook 'global-company-mode)
+  (define-key company-active-map (kbd "\C-n") 'company-select-next)
+  (define-key company-active-map (kbd "\C-p") 'company-select-previous)
+  (define-key company-active-map (kbd "\C-d") 'company-show-doc-buffer)
   (setq company-selection-wrap-around t)
   (company-tng-configure-default)
   :custom
@@ -259,10 +268,10 @@
 (use-package flycheck
   :init (global-flycheck-mode))
 
-(setq exec-path (append exec-path '("/usr/local/bin")))
+(setq exec-path (append exec-path '("/usr/local/bin" "/Library/Python/3.9/lib/python/site-packages/")))
 (cond ((eq system-type 'darwin)
-   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-   (setq exec-path (append exec-path '("/usr/local/bin")))))
+   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin" ":/Library/Python/3.9/lib/python/site-packages/"))
+   (setq exec-path (append exec-path '("/usr/local/bin" "/Library/Python/3.9/lib/python/site-packages/")))))
 (use-package add-node-modules-path
   :init (add-node-modules-path))
 
@@ -359,6 +368,44 @@
          :sasl-password (lambda (x) (read-passwd "SASL password: "))
          :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
          ))))
+
+(use-package slime-company
+  :defer t)
+
+(use-package slime
+  :bind (("M-TAB" . company-complete)
+         ("C-c C-d C-s" . slime-describe-symbol)
+         ("C-c C-d C-f" . slime-describe-function))
+  :init
+  (setq slime-lisp-implementations '((sbcl ("sbcl")))
+        slime-default-lisp 'sbcl)
+  (setq common-lisp-hyperspec-root
+        "/usr/local/share/doc/hyperspec/HyperSpec/")
+  (setq common-lisp-hyperspec-symbol-table
+        (concat common-lisp-hyperspec-root "Data/Map_Sym.txt"))
+  (setq common-lisp-hyperspec-issuex-table
+        (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+  (slime-setup '(slime-fancy slime-company slime-cl-indent)))
+
+(defun slime-description-fontify ()
+  (with-current-buffer "*slime-description*"
+    (slime-company-doc-mode)))
+
+(defadvice slime-show-description (after slime-description-fontify activate)
+  "Fontify sections of SLIME Description."
+  (slime-description-fontify))
+
+(use-package clojure-mode
+  :ensure t
+  :mode (("\\.clj\\'" . clojure-mode)
+         ("\\.edn\\'" . clojure-mode))
+  :config
+  (add-hook 'clojure-mode-map 'paredit-mode)
+  )
+
+(use-package cider
+  :mode (("\\.clj\\'" . cider-mode)
+         ("\\.edn\\'" . cider-mode)))
 
 (auto-fill-mode)
 (setq-default fill-column 80)
