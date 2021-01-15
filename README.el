@@ -354,9 +354,9 @@
   (setq circe-network-options
       '(("Freenode"
          :tls t
-         :nick (getenv "IRC_NICK")
-         :sasl-username (getenv "IRC_NICK")
-         :sasl-password (getenv "IRC_PASSWORD")
+         :nick "cherryramatis"
+         :sasl-username "cherryramatis"
+         :sasl-password (lambda (x) (read-passwd "SASL password: "))
          :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
          ))))
 
