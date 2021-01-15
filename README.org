@@ -352,14 +352,17 @@ Integration with ivy because this is amazing.
 ** Company
 Company is a text completion framework for Emacs. The name stands for “complete anything”. It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
 #+begin_src emacs-lisp
-(use-package company
-  :config
-  (add-hook 'after-init-hook 'global-company-mode)
-  (setq company-selection-wrap-around t)
-  (company-tng-configure-default)
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+  (use-package company
+    :config
+    (add-hook 'after-init-hook 'global-company-mode)
+    (define-key company-active-map (kbd "\C-n") 'company-select-next)
+    (define-key company-active-map (kbd "\C-p") 'company-select-previous)
+    (define-key company-active-map (kbd "\C-d") 'company-show-doc-buffer)
+    (setq company-selection-wrap-around t)
+    (company-tng-configure-default)
+    :custom
+    (company-minimum-prefix-length 1)
+    (company-idle-delay 0.0))
 #+end_src
 
 A company front-end with icons.
