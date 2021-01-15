@@ -51,10 +51,17 @@
 (electric-pair-mode 1)
 (add-hook 'org-mode-hook (lambda () (electric-pair-mode -1)))
 #+END_SRC
-** Line numbers
-#+BEGIN_SRC emacs-lisp
-(linum-mode 1)
-#+END_SRC
+** Display line number
+#+begin_src emacs-lisp
+  (setq column-numbers-mode t)
+  (global-display-line-numbers-mode)
+  (add-hook 'org-mode-hook (global-display-line-numbers-mode -1))
+#+end_src
+** Highlight current line
+#+begin_src emacs-lisp
+  (global-hl-line-mode 1)
+  (add-hook 'org-mode-hook (global-hl-line-mode -1))
+#+end_src
 * Startup performance
 Make startup faster by reducing the frequency of garbage collection and then use a hook to measure Emacs startup time.
 #+BEGIN_SRC emacs-lisp
