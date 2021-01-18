@@ -359,6 +359,16 @@ Integration with ivy because this is amazing.
 #+begin_src emacs-lisp
 (use-package lsp-ivy)
 #+end_src
+
+Integration with python.
+#+begin_src emacs-lisp
+  (use-package lsp-jedi
+    :after lsp-mode 
+    :config
+    (with-eval-after-load "lsp-mode"
+      (add-to-list 'lsp-disabled-clients 'pyls)
+      (add-to-list 'lsp-enabled-clients 'jedi)))
+#+end_src
 ** Company
 Company is a text completion framework for Emacs. The name stands for “complete anything”. It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
 #+begin_src emacs-lisp
@@ -598,6 +608,8 @@ best ideas from their competitors!
 easy way to manipulate lisp
 #+begin_src emacs-lisp
   (use-package paredit
+    :bind (("C-M-l" . paredit-forward-slurp-sexp)
+           ("C-M-h" . paredit-forward-barf-sexp))
     :config
     (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
     (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode))
@@ -628,7 +640,11 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
   (use-package telega
     :bind (("s-t" . telega))
     :commands (telega)
-    :defer t)
+    :defer t
+    :config
+    (add-hook 'telega-load-hook
+          (lambda ()
+            (define-key global-map (kbd "C-x t") telega-prefix-map))))
 #+end_src
 ** SLIME
 #+begin_src emacs-lisp
@@ -675,8 +691,7 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
     :mode (("\\.clj\\'" . cider-mode)
            ("\\.edn\\'" . cider-mode)))
 #+end_src
-** Python config
-*** Pipenv
+** Pipenv Config
 #+begin_src emacs-lisp
   (use-package pipenv
     :hook (python-mode . pipenv-mode)
@@ -685,16 +700,6 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
      pipenv-projectile-after-switch-function
      #'pipenv-projectile-after-switch-extended))
 #+end_s
-*** Lsp Python
-#+begin_src emacs-lisp
-  (use-package lsp-jedi
-    :after lsp-mode 
-    :config
-    (with-eval-after-load "lsp-mode"
-      (add-to-list 'lsp-disabled-clients 'pyls)
-      (add-to-list 'lsp-enabled-clients 'jedi)))
-#+end_src
-
 * Mode configuration
 ** Org mode
 *** Text wrap on 80 characters
@@ -775,17 +780,17 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
 * Custom functions
 ** Open eshell on other buffer
 #+begin_src emacs-lisp
-  (defun cherry/open-eshell ()
+  (defun cherry/open-term ()
     "Open eshell"
     (interactive)
     (if (projectile-project-p)
         (projectile-run-eshell)
-        (eshell)))
+      (eshell)))
 
   (defun shell-other-window (buffer-name)
     "Open a `shell' in a new window."
     (interactive)
-    (let ((buf (cherry/open-eshell)))
+    (let ((buf (cherry/open-term)))
       (switch-to-buffer (other-buffer buf))
       (switch-to-buffer-other-window buf)
       (rename-buffer buffer-name)

@@ -79,9 +79,11 @@
 (defun kill-and-close ()
   "Kill buffer and close window"
   (interactive)
-  (kill-current-buffer)
-  (delete-window)
-  )
+  (if (one-window-p)
+      (kill-current-buffer)
+    (progn
+      (kill-current-buffer)
+      (delete-window))))
 
 (global-set-key (kbd "s-k") #'kill-and-close)
 (global-set-key (kbd "s-o") #'other-window)
@@ -290,7 +292,8 @@
   :config (counsel-projectile-mode))
 
 (use-package magit
-  :bind ("C-x g" . magit))
+  :bind (("C-x g" . magit)
+         ("s-g" . magit)))
 
 (use-package tree-sitter)
 (use-package tree-sitter-langs)
@@ -351,6 +354,8 @@
   :init (global-undo-tree-mode))
 
 (use-package paredit
+  :bind (("C-M-l" . paredit-forward-slurp-sexp)
+         ("C-M-h" . paredit-forward-barf-sexp))
   :config
   (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
   (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode))
@@ -368,6 +373,15 @@
          :sasl-password (lambda (x) (read-passwd "SASL password: "))
          :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
          ))))
+
+(use-package telega
+  :bind (("s-t" . telega))
+  :commands (telega)
+  :defer t
+  :config
+  (add-hook 'telega-load-hook
+        (lambda ()
+          (define-key global-map (kbd "C-x t") telega-prefix-map))))
 
 (use-package slime-company
   :defer t)
@@ -471,17 +485,17 @@
      (setq org-map-continue-from (org-element-property :begin (org-element-at-point))))
    "/DONE" 'file))
 
-(defun cherry/open-eshell ()
+(defun cherry/open-term ()
   "Open eshell"
   (interactive)
   (if (projectile-project-p)
       (projectile-run-eshell)
-      (eshell)))
+    (eshell)))
 
 (defun shell-other-window (buffer-name)
   "Open a `shell' in a new window."
   (interactive)
-  (let ((buf (cherry/open-eshell)))
+  (let ((buf (cherry/open-term)))
     (switch-to-buffer (other-buffer buf))
     (switch-to-buffer-other-window buf)
     (rename-buffer buffer-name)
