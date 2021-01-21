@@ -13,6 +13,7 @@
   "Load PACKAGE in an easy way."
   (load (format "~/.emacs.d/lisp/%s" package)))
 
+(load "~/.emacs.d/secrets.el")
 (load-package "general")
 (load-package "keybindings")
 (load-package "eshell-package")
