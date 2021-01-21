@@ -18,6 +18,7 @@
 (load-package "keybindings")
 (load-package "eshell-package")
 (load-package "org-package")
+(load-package "agenda-notifications")
 (load-package "programming/lisp")
 (load-package "packages/ace-jump-package")
 (load-package "packages/alert-package")
