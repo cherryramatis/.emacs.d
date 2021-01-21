@@ -3,8 +3,8 @@
   (require 'package)
 
   (setq package-archives '(("melpa" . "https://melpa.org/packages/")
-			   ("org" . "https://orgmode.org/elpa/")
-			   ("elpa" . "https://elpa.gnu.org/packages/")))
+                           ("org" . "https://orgmode.org/elpa/")
+                           ("elpa" . "https://elpa.gnu.org/packages/")))
 
   (package-initialize)
   (unless package-archive-contents
@@ -12,6 +12,13 @@
 
   (unless (package-installed-p 'use-package)
     (package-install 'use-package))
+
+  (unless (package-installed-p 'exec-path-from-shell)
+    (package-install 'exec-path-from-shell))
+
+  (require 'exec-path-from-shell)
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
 
   (require 'use-package)
   (setq use-package-always-ensure t)
@@ -95,18 +102,19 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
   (load custom-file t)
 #+END_SRC
 * Keyboard shortcuts
-** Kill current buffer
-#+BEGIN_SRC emacs-lisp
-(define-key global-map (kbd "C-x k") 'kill-current-buffer)
-#+END_SRC
-** Next/Previous heading
+** Org mode mappings
 #+begin_src emacs-lisp
   (define-key org-mode-map (kbd "M-p") #'outline-previous-visible-heading)
   (define-key org-mode-map (kbd "M-n") #'outline-next-visible-heading)
+  (define-key org-mode-map (kbd "M-h") #'outline-promote)
+  (define-key org-mode-map (kbd "M-l") #'outline-demote)
+  (define-key org-mode-map (kbd "M-j") #'org-down-element)
+  (define-key org-mode-map (kbd "M-k") #'org-up-element)
 #+end_src
 ** Open org agenda
 #+begin_src emacs-lisp
   (global-set-key (kbd "C-c a") #'org-agenda-list)
+  (global-set-key (kbd "s-a") #'org-agenda-list)
 #+end_src
 ** Manipulate buffers/window
 #+begin_src emacs-lisp
@@ -144,6 +152,10 @@ I don’t want a bunch of transient files showing up as untracked in the Git rep
   (global-set-key (kbd "C-/") #'undo)
   (global-set-key (kbd "C-_") #'redo)
 #+end_src
+** Eval buffer
+#+begin_src emacs-lisp
+  (define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
+#+end_src
 * Third party packages
 ** Which key
 which-key is a minor mode for Emacs that displays the key bindings
@@ -171,6 +183,20 @@ Doom modeline is a cool e minimal modeline for emacs.
     :config
     (setq doom-modeline-height 10)
     )
+#+end_src
+** Crux
+A Collection of Ridiculously Useful eXtensions for Emacs. crux bundles many useful interactive commands to enhance your overall Emacs experience.
+
+Most of the crux commands are related to the editing experience, but there are also a bunch of utility commands that are just very useful to have (e.g. crux-open-with and crux-reopen-as-root).
+#+begin_src emacs-lisp
+  (use-package crux
+    :config
+    (global-set-key [remap move-beginning-of-line] #'crux-move-beginning-of-line)
+    (global-set-key [(shift return)] #'crux-smart-open-line)
+    (global-set-key (kbd "C-<backspace>") #'crux-kill-line-backwards)
+    (global-set-key [remap kill-whole-line] #'crux-kill-whole-line)
+    (global-set-key (kbd "C-j") #'crux-top-join-line)
+    (global-set-key (kbd "C-c d") #'crux-duplicate-current-line-or-region))
 #+end_src
 ** Theme
 #+BEGIN_SRC emacs-lisp
@@ -246,59 +272,15 @@ I currently use Ivy, Counsel, and Swiper to navigate around files, buffers, and 
 - To see actions for the selected minibuffer item, use M-o and then press the action’s key.
 - Super useful: Use C-c C-o to open ivy-occur to open the search results in a separate buffer. From there you can click any item to perform the ivy action.
 #+BEGIN_SRC emacs-lisp
-(use-package ivy
-  :init (ivy-mode 1)
-  :config
-  (setq ivy-use-virtual-buffers t)
-  (setq enable-recursive-minibuffers t)
-  )
+  (use-package helm
+    :init (helm-mode 1)
+    :bind (("M-x" . helm-M-x)
+           ("C-x C-f" . helm-find-files)))
 #+END_SRC
-Swiper is an alternative to isearch that uses ivy to show an overview of all matches.
+List match lines to another buffer, which is able to squeeze by any words you input. At the same time, the original buffer's cursor is jumping line to line according to moving up and down the line list.
 #+BEGIN_SRC emacs-lisp
-(use-package swiper
-  :bind (("C-s" . swiper)))
-#+END_SRC
-ivy-mode ensures that any Emacs command using completing-read-function uses ivy
-for completion. Counsel takes this further, providing versions of common Emacs
-commands that are customised to make the best use of ivy. For example,
-counsel-find-file has some additional keybindings. Pressing DEL will move you to
-the parent directory.
-#+BEGIN_SRC emacs-lisp
-(use-package counsel
-  :bind (("M-x" . counsel-M-x)
-         ("C-x C-f" . counsel-find-file)
-         ("C-h f" . counsel-describe-function)
-         ("C-h v" . counsel-describe-variable)
-         ("C-x b" . counsel-switch-buffer)
-         ("C-c k" . counsel-ag))
-  :config
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
-#+END_SRC
-
-Ivy-rich adds a more friendly interface for ivy
-#+BEGIN_SRC emacs-lisp
-(use-package ivy-rich
-  :init
-  (ivy-rich-mode 1))
-#+END_SRC
-** Org roam
-It’s a database of notes that make you easily implement a second brain with org mode.
-
-#+BEGIN_SRC emacs-lisp
-(use-package org-roam
-  :ensure t
-  :hook
-  (after-init . org-roam-mode)
-  :custom
-  (org-roam-directory "~/Dropbox/roam/")
-  :config
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-graph))
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert))
-              (("C-c n I" . org-roam-insert-immediate))))
+  (use-package helm-swoop
+    :bind (("C-s" . helm-swoop)))
 #+END_SRC
 ** Org tempo
 This package help defining some snippets like for expanding source blocks
@@ -353,11 +335,6 @@ This package put some virtual text on emacs indicating linter errors, etc…
     :hook (lsp-mode . lsp-ui-mode)
     :custom
     (lsp-ui-doc-position 'bottom))
-#+end_src
-
-Integration with ivy because this is amazing.
-#+begin_src emacs-lisp
-(use-package lsp-ivy)
 #+end_src
 
 Integration with python.
@@ -469,19 +446,13 @@ This library provides easy project management and navigation. The concept of a p
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
+  :custom ((projectile-completion-system 'helm))
   :bind-keymap
   ("C-c p" . projectile-command-map)
   :init
   (when (file-directory-p "~/projects")
     (setq projectile-project-search-path '("~/projects")))
   (setq projectile-switch-project-action #'projectile-dired))
-#+end_src
-
-Projectile has native support for using ivy as its completion system. Counsel-projectile provides further ivy integration into projectile by taking advantage of ivy’s support for selecting from a list of actions and applying an action without leaving the completion session. Concretely, counsel-projectile defines replacements for existing projectile commands as well as new commands that have no projectile counterparts. A minor mode is also provided that adds key bindings for all these commands on top of the projectile key bindings.
-#+begin_src emacs-lisp
-(use-package counsel-projectile
-  :config (counsel-projectile-mode))
 #+end_src
 ** Magit
 Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain. While we cannot (yet) claim that Magit wraps and improves upon each and every Git command, it is complete enough to allow even experienced Git users to perform almost all of their daily version control tasks directly from within Emacs. While many fine Git clients exist, only Magit and Git itself deserve to be called porcelains.
@@ -635,6 +606,30 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
            :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
            ))))
 #+end_src
+** Slack client
+#+begin_src emacs-lisp
+  (use-package slack
+    :commands (slack-start)
+    :init
+    (setq slack-buffer-emojify t) ;; if you want to enable emoji, default nil
+    (setq slack-prefer-current-team t)
+    :config
+    (slack-register-team
+    :name "hagens"
+    :default t
+    :client-id "fabio.ramatis@hagens.com.br"
+    :client-secret "A45b84c99@"
+    :token "xoxs-188549451731-1300081492802-1636536881728-dad11d8f228cdd8a1785c5f798fd2be36120106bfe42feff17f5964f1717ed69"
+    :subscribed-channels '(general slackbot))
+    (global-set-key (kbd "s-s") #'slack-im-select)
+    )
+
+  (use-package alert
+    :commands (alert)
+    :init
+    (setq alert-default-style 'notifier))
+
+#+end_src
 ** Telegram Client
 #+begin_src emacs-lisp
   (use-package telega
@@ -645,34 +640,6 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
     (add-hook 'telega-load-hook
           (lambda ()
             (define-key global-map (kbd "C-x t") telega-prefix-map))))
-#+end_src
-** SLIME
-#+begin_src emacs-lisp
-  (use-package slime-company
-    :defer t)
-
-  (use-package slime
-    :bind (("M-TAB" . company-complete)
-           ("C-c C-d C-s" . slime-describe-symbol)
-           ("C-c C-d C-f" . slime-describe-function))
-    :init
-    (setq slime-lisp-implementations '((sbcl ("sbcl")))
-          slime-default-lisp 'sbcl)
-    (setq common-lisp-hyperspec-root
-          "/usr/local/share/doc/hyperspec/HyperSpec/")
-    (setq common-lisp-hyperspec-symbol-table
-          (concat common-lisp-hyperspec-root "Data/Map_Sym.txt"))
-    (setq common-lisp-hyperspec-issuex-table
-          (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
-    (slime-setup '(slime-fancy slime-company slime-cl-indent)))
-
-  (defun slime-description-fontify ()
-    (with-current-buffer "*slime-description*"
-      (slime-company-doc-mode)))
-
-  (defadvice slime-show-description (after slime-description-fontify activate)
-    "Fontify sections of SLIME Description."
-    (slime-description-fontify))
 #+end_src
 ** Clojure config
 *** Clojure mode
@@ -699,7 +666,7 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
     (setq
      pipenv-projectile-after-switch-function
      #'pipenv-projectile-after-switch-extended))
-#+end_s
+#+end_src
 * Mode configuration
 ** Org mode
 *** Text wrap on 80 characters
@@ -714,39 +681,23 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
     (variable-pitch-mode 1)
     (visual-line-mode 1))
 
-  (use-package org
-    :hook (org-mode . cherry/org-mode-setup)
-    :config
-    (setq org-ellipsis " ▾")
-    (setq org-agenda-start-with-log-mode t)
-    (setq org-log-done 'time)
-    (setq org-log-into-drawer t)
+  (add-hook 'org-mode-hook 'cherry/org-mode-setup)
+  (setq org-ellipsis " ▾")
+  (setq org-agenda-start-with-log-mode t)
+  (setq org-log-done 'time)
+  (setq org-log-into-drawer t)
+  (setq org-agenda-files '("~/Dropbox/org/todo.org"))
+  (setq org-refile-targets
+        '(("archive.org" :maxlevel . 1)))
 
-    (setq org-agenda-files '("~/Dropbox/org/todo.org"))
+  (setq org-capture-templates
+          '(("t" "Todo" entry (file+olp "~/Dropbox/org/todo.org" "Inbox")
+             "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 1)
+            ("n" "Note" entry (file+olp "~/Dropbox/org/todo.org" "Inbox")
+             "* %?" :empty-lines 1)))
 
-    (require 'org-habit)
-    (add-to-list 'org-modules 'org-habit)
-    (setq org-habit-graph-column 60)
-    (setq org-refile-targets
-          '(("archive.org" :maxlevel . 1)))
-
-    (advice-add 'org-refile :after 'org-save-all-org-buffers)
-
-    (setq org-capture-templates
-          '(
-            ("t" "Today" entry (file+headline "~/Dropbox/org/todo.org" "Today")
-             "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
-            ("T" "Tomorrow" entry (file+headline "~/Dropbox/org/todo.org" "Tomorrow")
-             "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
-                    ("d" "No date" entry (file+headline "~/Dropbox/org/todo.org" "No Date")
-             "* TODO %?\n" :empty-lines 0)
-            ("n" "Note" entry (file+olp "~/Dropbox/org/notes.org" "Inbox")
-             "* %?" :empty-lines 0)))
-
-    (define-key global-map (kbd "C-c oc") (lambda () (interactive) (org-capture)))
-    (define-key global-map (kbd "C-c oa") (lambda () (interactive) (org-agenda-list)))
-    (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file-other-window "~/Dropbox/org/todo.org")))
-    )
+  (define-key global-map (kbd "C-c oc") #'org-capture)
+  (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file "~/todo/org/notes.org")))
 #+END_SRC
 *** UI changes
     Make headings with cool graphs.
@@ -757,12 +708,12 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
     Put the text on the center for a more word like experience.
     #+BEGIN_SRC emacs-lisp
       (defun cherry/org-mode-visual-fill ()
-	(setq visual-fill-column-width 100
-	      visual-fill-column-center-text t)
-	(visual-fill-column-mode 1))
+        (setq visual-fill-column-width 100
+              visual-fill-column-center-text t)
+        (visual-fill-column-mode 1))
 
       (use-package visual-fill-column
-	:hook (org-mode . cherry/org-mode-visual-fill))
+        :hook (org-mode . cherry/org-mode-visual-fill))
     #+END_SRC
 *** Archive all DONE tasks
 #+begin_src emacs-lisp
@@ -814,5 +765,27 @@ Complexity-wise, it is somewhere between rcirc (very minimal) and ERC (very comp
       (delete-window)))
 
   (advice-add 'eshell-life-is-too-much :after 'eshell-lifecycle)
+#+end_src
+** COMMENT Org agenda notifications
+#+begin_src emacs-lisp
+  (require 'appt)
+
+  (setq appt-time-msg-list nil)    ;; clear existing appt list
+  (setq appt-display-interval '5)  ;; warn every 5 minutes from t - appt-message-warning-time
+  (setq
+    appt-message-warning-time '10  ;; send first warning 15 minutes before appointment
+    appt-display-mode-line nil     ;; don't show in the modeline
+    appt-display-format 'window)   ;; pass warnings to the designated window function
+  (setq appt-disp-window-function (function cherry/appt-display-native))
+
+  (appt-activate 1)                ;; activate appointment notification
+
+  (defun cherry/appt-display-native (min-to-app new-time msg)
+    (alert (format "%s" msg) :title (format "Appointment in %s minutes" min-to-app)))
+
+
+  (org-agenda-to-appt)
+  (run-at-time "24:01" 3600 'org-agenda-to-appt)           ;; update appt list hourly
+  (add-hook 'org-finalize-agenda-hook 'org-agenda-to-appt) ;; update appt list on agenda view
 #+end_src
 

@@ -1,8 +1,8 @@
 (require 'package)
 
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
-			 ("org" . "https://orgmode.org/elpa/")
-			 ("elpa" . "https://elpa.gnu.org/packages/")))
+                         ("org" . "https://orgmode.org/elpa/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
 
 (package-initialize)
 (unless package-archive-contents
@@ -10,6 +10,13 @@
 
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
+
+(unless (package-installed-p 'exec-path-from-shell)
+  (package-install 'exec-path-from-shell))
+
+(require 'exec-path-from-shell)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
 
 (require 'use-package)
 (setq use-package-always-ensure t)
@@ -69,12 +76,15 @@
 	(expand-file-name (format "emacs-custom-%s.el" (user-uid)) temporary-file-directory)))
 (load custom-file t)
 
-(define-key global-map (kbd "C-x k") 'kill-current-buffer)
-
 (define-key org-mode-map (kbd "M-p") #'outline-previous-visible-heading)
 (define-key org-mode-map (kbd "M-n") #'outline-next-visible-heading)
+(define-key org-mode-map (kbd "M-h") #'outline-promote)
+(define-key org-mode-map (kbd "M-l") #'outline-demote)
+(define-key org-mode-map (kbd "M-j") #'org-down-element)
+(define-key org-mode-map (kbd "M-k") #'org-up-element)
 
 (global-set-key (kbd "C-c a") #'org-agenda-list)
+(global-set-key (kbd "s-a") #'org-agenda-list)
 
 (defun kill-and-close ()
   "Kill buffer and close window"
@@ -106,6 +116,8 @@
 (global-set-key (kbd "C-/") #'undo)
 (global-set-key (kbd "C-_") #'redo)
 
+(define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
+
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
@@ -117,6 +129,15 @@
   :config
   (setq doom-modeline-height 10)
   )
+
+(use-package crux
+  :config
+  (global-set-key [remap move-beginning-of-line] #'crux-move-beginning-of-line)
+  (global-set-key [(shift return)] #'crux-smart-open-line)
+  (global-set-key (kbd "C-<backspace>") #'crux-kill-line-backwards)
+  (global-set-key [remap kill-whole-line] #'crux-kill-whole-line)
+  (global-set-key (kbd "C-j") #'crux-top-join-line)
+  (global-set-key (kbd "C-c d") #'crux-duplicate-current-line-or-region))
 
 (use-package modus-vivendi-theme
   :config
@@ -170,44 +191,13 @@
   (add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
   )
 
-(use-package ivy
-  :init (ivy-mode 1)
-  :config
-  (setq ivy-use-virtual-buffers t)
-  (setq enable-recursive-minibuffers t)
-  )
+(use-package helm
+  :init (helm-mode 1)
+  :bind (("M-x" . helm-M-x)
+         ("C-x C-f" . helm-find-files)))
 
-(use-package swiper
-  :bind (("C-s" . swiper)))
-
-(use-package counsel
-  :bind (("M-x" . counsel-M-x)
-         ("C-x C-f" . counsel-find-file)
-         ("C-h f" . counsel-describe-function)
-         ("C-h v" . counsel-describe-variable)
-         ("C-x b" . counsel-switch-buffer)
-         ("C-c k" . counsel-ag))
-  :config
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
-
-(use-package ivy-rich
-  :init
-  (ivy-rich-mode 1))
-
-(use-package org-roam
-  :ensure t
-  :hook
-  (after-init . org-roam-mode)
-  :custom
-  (org-roam-directory "~/Dropbox/roam/")
-  :config
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-graph))
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert))
-              (("C-c n I" . org-roam-insert-immediate))))
+(use-package helm-swoop
+  :bind (("C-s" . helm-swoop)))
 
 (require 'org-tempo)
 
@@ -234,7 +224,12 @@
   :custom
   (lsp-ui-doc-position 'bottom))
 
-(use-package lsp-ivy)
+(use-package lsp-jedi
+  :after lsp-mode 
+  :config
+  (with-eval-after-load "lsp-mode"
+    (add-to-list 'lsp-disabled-clients 'pyls)
+    (add-to-list 'lsp-enabled-clients 'jedi)))
 
 (use-package company
   :config
@@ -280,16 +275,13 @@
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
+  :custom ((projectile-completion-system 'helm))
   :bind-keymap
   ("C-c p" . projectile-command-map)
   :init
   (when (file-directory-p "~/projects")
     (setq projectile-project-search-path '("~/projects")))
   (setq projectile-switch-project-action #'projectile-dired))
-
-(use-package counsel-projectile
-  :config (counsel-projectile-mode))
 
 (use-package magit
   :bind (("C-x g" . magit)
@@ -374,6 +366,27 @@
          :channels ("#emacs-circe" "#emacs-beginners" "#emacs" "#emacs-offtopic")
          ))))
 
+(use-package slack
+  :commands (slack-start)
+  :init
+  (setq slack-buffer-emojify t) ;; if you want to enable emoji, default nil
+  (setq slack-prefer-current-team t)
+  :config
+  (slack-register-team
+  :name "hagens"
+  :default t
+  :client-id "fabio.ramatis@hagens.com.br"
+  :client-secret "A45b84c99@"
+  :token "xoxs-188549451731-1300081492802-1636536881728-dad11d8f228cdd8a1785c5f798fd2be36120106bfe42feff17f5964f1717ed69"
+  :subscribed-channels '(general slackbot))
+  (global-set-key (kbd "s-s") #'slack-im-select)
+  )
+
+(use-package alert
+  :commands (alert)
+  :init
+  (setq alert-default-style 'notifier))
+
 (use-package telega
   :bind (("s-t" . telega))
   :commands (telega)
@@ -382,32 +395,6 @@
   (add-hook 'telega-load-hook
         (lambda ()
           (define-key global-map (kbd "C-x t") telega-prefix-map))))
-
-(use-package slime-company
-  :defer t)
-
-(use-package slime
-  :bind (("M-TAB" . company-complete)
-         ("C-c C-d C-s" . slime-describe-symbol)
-         ("C-c C-d C-f" . slime-describe-function))
-  :init
-  (setq slime-lisp-implementations '((sbcl ("sbcl")))
-        slime-default-lisp 'sbcl)
-  (setq common-lisp-hyperspec-root
-        "/usr/local/share/doc/hyperspec/HyperSpec/")
-  (setq common-lisp-hyperspec-symbol-table
-        (concat common-lisp-hyperspec-root "Data/Map_Sym.txt"))
-  (setq common-lisp-hyperspec-issuex-table
-        (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
-  (slime-setup '(slime-fancy slime-company slime-cl-indent)))
-
-(defun slime-description-fontify ()
-  (with-current-buffer "*slime-description*"
-    (slime-company-doc-mode)))
-
-(defadvice slime-show-description (after slime-description-fontify activate)
-  "Fontify sections of SLIME Description."
-  (slime-description-fontify))
 
 (use-package clojure-mode
   :ensure t
@@ -421,6 +408,13 @@
   :mode (("\\.clj\\'" . cider-mode)
          ("\\.edn\\'" . cider-mode)))
 
+(use-package pipenv
+  :hook (python-mode . pipenv-mode)
+  :init
+  (setq
+   pipenv-projectile-after-switch-function
+   #'pipenv-projectile-after-switch-extended))
+
 (auto-fill-mode)
 (setq-default fill-column 80)
 
@@ -429,46 +423,30 @@
   (variable-pitch-mode 1)
   (visual-line-mode 1))
 
-(use-package org
-  :hook (org-mode . cherry/org-mode-setup)
-  :config
-  (setq org-ellipsis " ▾")
-  (setq org-agenda-start-with-log-mode t)
-  (setq org-log-done 'time)
-  (setq org-log-into-drawer t)
+(add-hook 'org-mode-hook 'cherry/org-mode-setup)
+(setq org-ellipsis " ▾")
+(setq org-agenda-start-with-log-mode t)
+(setq org-log-done 'time)
+(setq org-log-into-drawer t)
+(setq org-agenda-files '("~/Dropbox/org/todo.org"))
+(setq org-refile-targets
+      '(("archive.org" :maxlevel . 1)))
 
-  (setq org-agenda-files '("~/Dropbox/org/todo.org"))
+(setq org-capture-templates
+        '(("t" "Todo" entry (file+olp "~/Dropbox/org/todo.org" "Inbox")
+           "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 1)
+          ("n" "Note" entry (file+olp "~/Dropbox/org/todo.org" "Inbox")
+           "* %?" :empty-lines 1)))
 
-  (require 'org-habit)
-  (add-to-list 'org-modules 'org-habit)
-  (setq org-habit-graph-column 60)
-  (setq org-refile-targets
-        '(("archive.org" :maxlevel . 1)))
-
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
-
-  (setq org-capture-templates
-        '(
-          ("t" "Today" entry (file+headline "~/Dropbox/org/todo.org" "Today")
-           "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
-          ("T" "Tomorrow" entry (file+headline "~/Dropbox/org/todo.org" "Tomorrow")
-           "* TODO %?\nSCHEDULED: %^t\n" :empty-lines 0)
-                  ("d" "No date" entry (file+headline "~/Dropbox/org/todo.org" "No Date")
-           "* TODO %?\n" :empty-lines 0)
-          ("n" "Note" entry (file+olp "~/Dropbox/org/notes.org" "Inbox")
-           "* %?" :empty-lines 0)))
-
-  (define-key global-map (kbd "C-c oc") (lambda () (interactive) (org-capture)))
-  (define-key global-map (kbd "C-c oa") (lambda () (interactive) (org-agenda-list)))
-  (define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file-other-window "~/Dropbox/org/todo.org")))
-  )
+(define-key global-map (kbd "C-c oc") #'org-capture)
+(define-key global-map (kbd "C-c oN") (lambda () (interactive) (find-file "~/todo/org/notes.org")))
 
 (use-package org-bullets
  :hook (org-mode . (lambda () (org-bullets-mode 1))))
 
 (defun cherry/org-mode-visual-fill ()
   (setq visual-fill-column-width 100
-	visual-fill-column-center-text t)
+        visual-fill-column-center-text t)
   (visual-fill-column-mode 1))
 
 (use-package visual-fill-column
