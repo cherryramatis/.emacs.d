@@ -8,7 +8,7 @@
 
 (require 'alert)
 
-(setq alert-default-style 'notifier)
+(setq alert-default-style 'osx-notifier)
 
 (provide 'alert-package)
 ;;; alert-package.el ends here

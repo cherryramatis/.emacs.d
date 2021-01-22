@@ -37,7 +37,6 @@
 (load-package "packages/helm-package")
 (load-package "packages/web-mode-package")
 (load-package "packages/typescript-package")
-(load-package "packages/lsp-package")
 (load-package "packages/magit-package")
 (load-package "packages/modus-vivendi-package")
 (load-package "packages/multiple-cursors-package")
@@ -51,6 +50,9 @@
 (load-package "packages/which-key-package")
 (load-package "packages/yas-package")
 (load-package "packages/org-roam-package")
+(load-package "packages/eglot-package")
+(load-package "packages/eshell-syntax-highlighting-package")
+(load-package "packages/eshell-prompt-package")
 
 (provide 'init)
 ;;; init.el ends here

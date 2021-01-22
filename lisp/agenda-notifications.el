@@ -7,6 +7,7 @@
 ;;; Code:
 
 (require 'appt)
+(require 'alert)
 
 (defun cherry/appt-display-native (min-to-app new-time msg)
   (alert (format "%s" msg) :title (format "Appointment in %s minutes" min-to-app)))

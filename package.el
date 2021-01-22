@@ -1,3 +1,11 @@
+;;; package.el --- Installing packages
+
+;;; Commentary:
+
+;; Installing packages
+
+;;; Code:
+
 (require 'package)
 
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -8,22 +16,54 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
-;; Comment out if you've already loaded this package...
-(require 'cl-lib)
+(defun package! (package)
+  "Install PACKAGE."
+  (interactive "P")
+  (if (not (package-installed-p package))
+      (package-install package)))
+  
+(package! 'exec-path-from-shell)
+(package! 'which-key)
+(package! 'doom-modeline)
+(package! 'crux)
+(package! 'modus-vivendi-theme)
+(package! 'modus-operandi-theme)
+(package! 'bufler)
+(package! 'helm)
+(package! 'helm-swoop)
+(package! 'eglot)
+(package! 'company)
+(package! 'company-box)
+(package! 'typescript-mode)
+(package! 'web-mode)
+(package! 'prettier-js)
+(package! 'flycheck)
+(package! 'add-node-modules-path)
+(package! 'projectile)
+(package! 'helm-projectile)
+(package! 'magit)
+(package! 'tree-sitter)
+(package! 'tree-sitter-langs)
+(package! 'avy)
+(package! 'ace-jump-mode)
+(package! 'guru-mode)
+(package! 'yasnippet)
+(package! 'yasnippet-snippets)
+(package! 'eyebrowse)
+(package! 'multiple-cursors)
+(package! 'undo-tree)
+(package! 'paredit)
+(package! 'circe)
+(package! 'slack)
+(package! 'telega)
+(package! 'clojure-mode)
+(package! 'cider)
+(package! 'pipenv)
+(package! 'org-roam)
+(package! 'alert)
+(package! 'eshell-syntax-highlighting)
+(package! 'eshell-git-prompt)
+(package! 'dired-single)
 
-(defvar my-packages
-  '(exec-path-from-shell which-key doom-modeline crux modus-vivendi-theme modus-operandi-theme bufler helm helm-swoop lsp-mode lsp-ui helm-lsp lsp-jedi company company-box typescript-mode web-mode prettier-js flycheck add-node-modules-path projectile helm-projectile magit tree-sitter tree-sitter-langs avy ace-jump-mode guru-mode yasnippet yasnippet-snippets eyebrowse multiple-cursors undo-tree paredit circe slack telega clojure-mode cider pipenv org-roam)
-  "A list of packages to ensure are installed at launch.")
-
-(defun my-packages-installed-p ()
-  (cl-loop for p in my-packages
-           when (not (package-installed-p p)) do (cl-return nil)
-           finally (cl-return t)))
-
-(unless (my-packages-installed-p)
-  ;; check for new packages (package versions)
-  (package-refresh-contents)
-  ;; install the missing packages
-  (dolist (p my-packages)
-    (when (not (package-installed-p p))
-      (package-install p))))
+(provide 'package)
+;;; package.el ends here
