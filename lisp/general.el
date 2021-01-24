@@ -15,13 +15,13 @@
 (setq default-directory "~/")
 
 ;; Default font
-(set-face-attribute 'default nil :font "Iosevka Term Light" :height 150)
+(set-face-attribute 'default nil :font "Iosevka Light" :height 150)
 
 ;; Pitched fonts
-(set-face-attribute 'fixed-pitch nil :font "Iosevka Term Light" :height 150)
+(set-face-attribute 'fixed-pitch nil :font "Iosevka Light" :height 150)
 
 ;; Variable pitched fonts
-(set-face-attribute 'variable-pitch nil :font "Iosevka Term Light" :height 150)
+(set-face-attribute 'variable-pitch nil :font "Iosevka Light" :height 150)
 
 (add-hook 'prog-mode-hook (hl-line-mode 1))
 

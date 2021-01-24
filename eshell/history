@@ -1,1 +1,5 @@
 exit
+ls
+git status
+git diff config.py
+exit

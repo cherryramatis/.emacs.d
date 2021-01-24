@@ -60,6 +60,7 @@
 (package! 'cider)
 (package! 'pipenv)
 (package! 'org-roam)
+(package! 'org-bullets)
 (package! 'alert)
 (package! 'eshell-syntax-highlighting)
 (package! 'eshell-git-prompt)
