@@ -1,3 +1,30 @@
+* Important section if you're on linux!
+** How to setup my keys
+1. Install this program from source
+#+BEGIN_SRC sh
+git clone https://gitlab.com/interception/linux/plugins/dual-function-keys.git
+cd dual-function-keys
+make && sudo make install
+#+END_SRC
+2. Copy the files on interception folder into /etc/interception
+3. Write a file on /etc/systemd/system/udevmon.service
+#+BEGIN_SRC sh
+[Unit]
+Description=udevmon
+Wants=systemd-udev-settle.service
+After=systemd-udev-settle.service
+
+[Service]
+ExecStart=/usr/bin/nice -n -20 /usr/bin/udevmon -c /etc/interception/udevmon.yaml
+
+[Install]
+WantedBy=multi-user.target
+#+END_SRC
+4. Run the service always
+#+BEGIN_SRC sh
+sudo systemctl enable --now udevmon
+#+END_SRC
+
 * Setup package manager
 #+BEGIN_SRC emacs-lisp
   (require 'package)
